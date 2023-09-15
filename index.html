@@ -3,12 +3,12 @@
   <head>
     <meta http-equiv='X-UA-Compatible' content='IE=edge' />
     <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
-    <title>SMART on FHIR 2</title>
+    <title>SMART on FHIR for Prior Authorization</title>
 
     <link rel='stylesheet' type='text/css' href='./src/css/example-smart-app.css'>
     <!--
       Temporarily disable cerner-smart-embeddable-lib
-      <link rel='stylesheet' type='text/css' href='./lib/css/cerner-smart-embeddable-lib-1.0.0.min.css'>
+    <link rel='stylesheet' type='text/css' href='./lib/css/cerner-smart-embeddable-lib-1.0.0.min.css'>
     -->
   </head>
   <body>
@@ -20,10 +20,14 @@
       <div class="bounce3"></div>
     </div>
     <div id='holder' >
-      <h2>Example-SMART-App</h2>
+      <h2>SMART on FHIR for Prior Authorization</h2>
 
-      <h2>Patient Resource</h2>
+      <h2>Patient Demographics</h2>
       <table>
+        <tr>
+          <th>Patient ID:</th>
+          <td id='patient_id'></td>
+        </tr>
         <tr>
           <th>First Name:</th>
           <td id='fname'></td>
@@ -41,30 +45,18 @@
           <td id='birthdate'></td>
         </tr>
       </table>
-      <!-- <h2>Observation Resource</h2> -->
-      <!-- <table> -->
-        <!-- <tr> -->
-          <!-- <th>Height:</th> -->
-          <!-- <td id='height'></td> -->
-        <!-- </tr> -->
-        <!-- <tr> -->
-          <!-- <th>Systolic Blood Pressure:</th> -->
-          <!-- <td id='systolicbp'></td> -->
-
-        <!-- </tr> -->
-        <!-- <tr> -->
-          <!-- <th>Diastolic Blood Pressure:</th> -->
-          <!-- <td id='diastolicbp'></td> -->
-        <!-- </tr> -->
-        <!-- <tr> -->
-          <!-- <th>LDL:</th> -->
-          <!-- <td id='ldl'></td> -->
-        <!-- </tr> -->
-        <!-- <tr> -->
-          <!-- <th>HDL:</th> -->
-          <!-- <td id='hdl'></td> -->
-        <!-- </tr> -->
-      <!-- </table> -->
+      <h2>Insurance Details</h2>
+      <table id='coverageTable'>
+        <tr>
+		<th>Primary Payer</th>
+		<th>Plan Effective</th>
+	</tr>
+      	<tr>
+		<td id="primaryPayer"></td>
+		<td id="planEffective"></td>
+	</tr>
+	<tbody id= "coverageResult"></tbody>
+      </table>
     </div>
     <!-- Required JS files to enable this page to embed within an MPage -->
     <!--
