@@ -11,54 +11,104 @@
       if (smart.hasOwnProperty('patient')) {
         var patient = smart.patient;
         var pt = patient.read();
-        /// var obv = smart.patient.api.fetchAll({
-                    // type: 'Observation',
-                    // query: {
-                      // code: {
-                        // $or: ['http://loinc.org|8302-2', 'http://loinc.org|8462-4',
-                              // 'http://loinc.org|8480-6', 'http://loinc.org|2085-9',
-                              // 'http://loinc.org|2089-1', 'http://loinc.org|55284-4']
-                      // }
-                    // }
-                  // });
+        var obv = smart.patient.api.fetchAll({
+                    type: 'Observation',
+                    query: {
+                      code: {
+                        $or: ['http://loinc.org|8302-2', 'http://loinc.org|8462-4',
+                              'http://loinc.org|8480-6', 'http://loinc.org|2085-9',
+                              'http://loinc.org|2089-1', 'http://loinc.org|55284-4']
+                      }
+                    }
+                  });
 
-        $.when(pt).fail(onError);
+        var cov = smart.patient.api.fetchAll({
+                    type: 'Coverage'
+                  });
 
-        $.when(pt).done(function(patient) {
-          //var byCodes = smart.byCodes(obv, 'code');
+        var org = smart.patient.api.fetchAll({
+                    type: 'Organization'
+                  });
+
+        var insuranceOrg = "";
+
+        $.when(pt, obv).fail(onError);
+
+        $.when(pt, cov).done(function(patient, cov) {
+          var coverageArray = [];
+          var coverageIndex = 0;
+          for(var i = 0; i < cov.length; i++) {
+            var coverageItem = cov[i];
+            if (coverageItem.hasOwnProperty('period') && coverageItem.hasOwnProperty('payor') && coverageItem.status == 'active') {
+              coverageArray[coverageIndex] = {
+                "id": coverageItem.id,
+                "payorId": coverageItem.payor[0].reference,
+                "startDate": coverageItem.period.start,
+                "endDate": coverageItem.period.end
+              }
+              coverageIndex = coverageIndex + 1;
+            }
+          }
+          var insuranceDetail = coverageArray[0];
+          insuranceOrg = "";
+          insuranceOrg = insuranceDetail.payorId.split('/')[1];
+          var insurance = "<b>From: </b>"+insuranceDetail.startDate+"  <b>To: </b>"+insuranceDetail.endDate;
+          document.getElementById('planEffective').innerHTML = insurance;
+
+          $.when(insuranceOrg, org).done(function(insuranceOrg, org) {
+            console.log(insuranceOrg);
+            var orgDetails = org.find(o => o.id === insuranceOrg);
+            document.getElementById('primaryPayer').innerHTML = orgDetails.name;
+          });
+        });
+
+        $.when(pt, obv).done(function(patient, obv) {
+          var byCodes = smart.byCodes(obv, 'code');
           var gender = patient.gender;
 
           var fname = '';
           var lname = '';
+
+          var patient_id = patient.id;
 
           if (typeof patient.name[0] !== 'undefined') {
             fname = patient.name[0].given.join(' ');
             lname = patient.name[0].family;
           }
 
-          // var height = byCodes('8302-2');
-          // var systolicbp = getBloodPressureValue(byCodes('55284-4'),'8480-6');
-          // var diastolicbp = getBloodPressureValue(byCodes('55284-4'),'8462-4');
-          // var hdl = byCodes('2085-9');
-          // var ldl = byCodes('2089-1');
+          var height = byCodes('8302-2');
+          var systolicbp = getBloodPressureValue(byCodes('55284-4'),'8480-6');
+          var diastolicbp = getBloodPressureValue(byCodes('55284-4'),'8462-4');
+          var hdl = byCodes('2085-9');
+          var ldl = byCodes('2089-1');
 
           var p = defaultPatient();
           p.birthdate = patient.birthDate;
           p.gender = gender;
           p.fname = fname;
           p.lname = lname;
-          // p.height = getQuantityValueAndUnit(height[0]);
+          p.height = getQuantityValueAndUnit(height[0]);
+          p.patient_id = patient_id;
 
-          // if (typeof systolicbp != 'undefined')  {
-            // p.systolicbp = systolicbp;
-          // }
+          if(typeof height[0] != 'undefined' && typeof height[0].valueQuantity.value != 'undefined' && typeof height[0].valueQuantity.unit != 'undefined') {
+            p.height = height[0].valueQuantity.value + ' ' + height[0].valueQuantity.unit;
+          }
 
-          // if (typeof diastolicbp != 'undefined') {
-            // p.diastolicbp = diastolicbp;
-          // }
+          if (typeof systolicbp != 'undefined')  {
+            p.systolicbp = systolicbp;
+          }
 
-          // p.hdl = getQuantityValueAndUnit(hdl[0]);
-          // p.ldl = getQuantityValueAndUnit(ldl[0]);
+          if (typeof diastolicbp != 'undefined') {
+            p.diastolicbp = diastolicbp;
+          }
+
+          if(typeof hdl[0] != 'undefined' && typeof hdl[0].valueQuantity.value != 'undefined' && typeof hdl[0].valueQuantity.unit != 'undefined') {
+            p.hdl = hdl[0].valueQuantity.value + ' ' + hdl[0].valueQuantity.unit;
+          }
+    
+          if(typeof ldl[0] != 'undefined' && typeof ldl[0].valueQuantity.value != 'undefined' && typeof ldl[0].valueQuantity.unit != 'undefined') {
+            p.ldl = ldl[0].valueQuantity.value + ' ' + ldl[0].valueQuantity.unit;
+          }
 
           ret.resolve(p);
         });
@@ -73,7 +123,9 @@
   };
 
   function defaultPatient(){
+    document.getElementById("coverageResult").innerHTML = '';
     return {
+      pateint_id: {value: ''},
       fname: {value: ''},
       lname: {value: ''},
       gender: {value: ''},
@@ -117,6 +169,7 @@
   window.drawVisualization = function(p) {
     $('#holder').show();
     $('#loading').hide();
+    $('#patient_id').html(p.patient_id);
     $('#fname').html(p.fname);
     $('#lname').html(p.lname);
     $('#gender').html(p.gender);
